@@ -1,9 +1,6 @@
 package com.viosng.asterix.db.adapter;
 
-import com.viosng.asterix.db.adapter.thrift.Data;
-import com.viosng.asterix.db.adapter.thrift.HostTask;
-import com.viosng.asterix.db.adapter.thrift.Hosting;
-import com.viosng.asterix.db.adapter.thrift.ThriftExpression;
+import com.viosng.asterix.db.adapter.thrift.*;
 import com.viosng.confsql.semantic.model.thrift.ThriftExpressionConverter;
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.TException;
@@ -32,7 +29,7 @@ public class AsterixAdapter {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                AsterixServiceImpl service = new AsterixServiceImpl(new DummyDataProvider(), ENGINE_DATA_PORT);
+                AsterixServiceImpl service = new AsterixServiceImpl(new DummyDataProvider());
 
                 TServerTransport serverTransport = null;
                 try {
@@ -99,13 +96,15 @@ public class AsterixAdapter {
         deserializer.deserialize(deserializedThriftQuery,
                 ThriftExpressionConverter.getInstance().toJSONProtocolString("select * from Persons where age < 30 and name < \"C\""),
                 "UTF-8");
-        client.setTask(new HostTask(), deserializedThriftQuery);
+        HostTask task = new HostTask();
+        task.addToOutputAddr(new HostInfo().setAddr("localhost").setPort(ENGINE_DATA_PORT));
+        client.setTask(task, deserializedThriftQuery);
         client.ntf();
         transport.close();
     }
 
-    public static void main(String[] args) throws TException {
-        AsterixServiceImpl service = new AsterixServiceImpl(new DummyDataProvider(), ENGINE_DATA_PORT);
+    private static void runAsterixAdapterServer() {
+        AsterixServiceImpl service = new AsterixServiceImpl(new DummyDataProvider());
 
         TServerTransport serverTransport = null;
         try {
@@ -116,5 +115,10 @@ public class AsterixAdapter {
         TServer server = new TSimpleServer(new TServer.Args(serverTransport).processor(new Hosting.Processor<>(service)));
         log.info("Starting AsterixAdapter Server");
         server.serve();
+    }
+
+    public static void main(String[] args) throws TException {
+        runAsterixAdapterServer();
+        //testServices();
     }
 }

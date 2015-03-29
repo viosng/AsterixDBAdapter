@@ -25,13 +25,11 @@ public class AsterixServiceImpl implements Hosting.Iface {
     private final static Logger log = LoggerFactory.getLogger(AsterixServiceImpl.class);
 
     private AsterixDataProvider dataProvider;
-    private final int enginePort;
+    private volatile HostTask task;
     private volatile String currentData = null;
 
-
-    public AsterixServiceImpl(AsterixDataProvider dataProvider, int enginePort) {
+    public AsterixServiceImpl(AsterixDataProvider dataProvider) {
         this.dataProvider = dataProvider;
-        this.enginePort = enginePort;
     }
 
     public static Data convert(String s) {
@@ -91,8 +89,9 @@ public class AsterixServiceImpl implements Hosting.Iface {
     public long ntf() throws TException {
         log.info("Received ntf request");
         TTransport transport;
-        log.info("opening client transport protocol to localhost:{}", enginePort);
-        transport = new TSocket("localhost", enginePort);
+        HostInfo hostInfo = task.getOutputAddr().get(0);
+        log.info("opening client transport protocol to {}:{}", hostInfo.getAddr(), hostInfo.getPort());
+        transport = new TSocket(hostInfo.getAddr(), (int)hostInfo.getPort());
         transport.open();
         TProtocol protocol = new TBinaryProtocol(transport);
         Hosting.Client client = new Hosting.Client(protocol);
@@ -116,6 +115,7 @@ public class AsterixServiceImpl implements Hosting.Iface {
         log.info("Received setTask request");
         String asterixQuery = AsterixConverter.convert(query);
         log.info("converted to AQL query: {}", asterixQuery);
+        this.task = task;
         currentData = dataProvider.getDataString();
         return 0;
     }
