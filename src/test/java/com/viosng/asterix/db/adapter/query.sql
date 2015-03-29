@@ -1,0 +1,1 @@
+select * from Persons where age < 30 and name < "C"
