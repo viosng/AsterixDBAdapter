@@ -6,9 +6,9 @@ package com.viosng.asterix.db.adapter;
  * Date: 29.03.2015
  * Time: 22:17
  */
-public class DummyDataProvider implements AsterixDataProvider {
+public class DummyDataProvider implements DataProvider {
     @Override
-    public String getDataString() {
+    public String getDataString(String query) {
         return "{ \"id\": 1, \"name\": \"John\", \"age\": 29, \"department-id\": 2 }\n" +
                 "{ \"id\": 2, \"name\": \"Tony\", \"age\": 31, \"department-id\": 3 }\n" +
                 "{ \"id\": 3, \"name\": \"Peter\", \"age\": 38, \"department-id\": 2 }\n" +

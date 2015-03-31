@@ -25,62 +25,56 @@ public class AsterixAdapter {
     private final static int ASTERIX_ADAPTER_PORT = 9080;
     private final static int ENGINE_DATA_PORT = 9070;
 
-    private static void testServices() throws TException {
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                AsterixServiceImpl service = new AsterixServiceImpl(new DummyDataProvider());
+    private static void testServices(DataProvider provider) throws TException {
+        Thread thread = new Thread(() -> {
+            AsterixServiceImpl service = new AsterixServiceImpl(provider);
 
-                TServerTransport serverTransport = null;
-                try {
-                    serverTransport = new TServerSocket(ASTERIX_ADAPTER_PORT);
-                } catch (TTransportException e) {
-                    e.printStackTrace();
-                }
-                TServer server = new TSimpleServer(new TServer.Args(serverTransport).processor(new Hosting.Processor<>(service)));
-                System.out.println("Starting the simple server...");
-                server.serve();
+            TServerTransport serverTransport = null;
+            try {
+                serverTransport = new TServerSocket(ASTERIX_ADAPTER_PORT);
+            } catch (TTransportException e) {
+                e.printStackTrace();
             }
+            TServer server = new TSimpleServer(new TServer.Args(serverTransport).processor(new Hosting.Processor<>(service)));
+            System.out.println("Starting the simple server...");
+            server.serve();
         });
         thread.start();
 
-        Thread engineThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                TServerTransport serverTransport = null;
-                try {
-                    serverTransport = new TServerSocket(ENGINE_DATA_PORT);
-                } catch (TTransportException e) {
-                    e.printStackTrace();
-                }
-                TServer server = new TSimpleServer(new TServer.Args(serverTransport).processor(new Hosting.Processor<>(new Hosting.Iface() {
-                    @Override
-                    public long ntf() throws TException {
-                        log.info("get ntf request");
-                        return 0;
-                    }
-
-                    @Override
-                    public long execute(ThriftExpression query) throws TException {
-                        log.info("get execute request");
-                        return 0;
-                    }
-
-                    @Override
-                    public long setTask(HostTask task, ThriftExpression query) throws TException {
-                        log.info("get setTask request");
-                        return 0;
-                    }
-
-                    @Override
-                    public long getData(Data rdata) throws TException {
-                        log.info("get getData request");
-                        return 0;
-                    }
-                })));
-                System.out.println("Starting the simple server...");
-                server.serve();
+        Thread engineThread = new Thread(() -> {
+            TServerTransport serverTransport = null;
+            try {
+                serverTransport = new TServerSocket(ENGINE_DATA_PORT);
+            } catch (TTransportException e) {
+                e.printStackTrace();
             }
+            TServer server = new TSimpleServer(new TServer.Args(serverTransport).processor(new Hosting.Processor<>(new Hosting.Iface() {
+                @Override
+                public long ntf() throws TException {
+                    log.info("get ntf request");
+                    return 0;
+                }
+
+                @Override
+                public long execute(ThriftExpression query) throws TException {
+                    log.info("get execute request");
+                    return 0;
+                }
+
+                @Override
+                public long setTask(HostTask task, ThriftExpression query) throws TException {
+                    log.info("get setTask request");
+                    return 0;
+                }
+
+                @Override
+                public long getData(Data rdata) throws TException {
+                    log.info("get getData request");
+                    return 0;
+                }
+            })));
+            System.out.println("Starting the simple server...");
+            server.serve();
         });
         engineThread.start();
 
@@ -103,8 +97,8 @@ public class AsterixAdapter {
         transport.close();
     }
 
-    private static void runAsterixAdapterServer() {
-        AsterixServiceImpl service = new AsterixServiceImpl(new DummyDataProvider());
+    private static void runAsterixAdapterServer(DataProvider provider) {
+        AsterixServiceImpl service = new AsterixServiceImpl(provider);
 
         TServerTransport serverTransport = null;
         try {
@@ -118,7 +112,9 @@ public class AsterixAdapter {
     }
 
     public static void main(String[] args) throws TException {
-        runAsterixAdapterServer();
-        //testServices();
+        String address = args.length > 0 ? args[0] : "localhost";
+        int port = args.length > 0 ? Integer.parseInt(args[1]) : 19002;
+        runAsterixAdapterServer(new AsterixDataProvider(address, port));
+        //testServices(new AsterixDataProvider("192.168.43.128", port));
     }
 }

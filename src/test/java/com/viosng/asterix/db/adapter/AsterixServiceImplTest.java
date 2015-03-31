@@ -14,8 +14,8 @@ public class AsterixServiceImplTest {
 
     @Test
     public void testParsing() throws Exception {
-        AsterixDataProvider dataProvider = new DummyDataProvider();
+        DataProvider dataProvider = new DummyDataProvider();
         TSerializer serializer = new TSerializer(new TSimpleJSONProtocol.Factory());
-        System.out.println(serializer.toString(AsterixServiceImpl.convert(dataProvider.getDataString())));
+        System.out.println(serializer.toString(AsterixServiceImpl.convert(dataProvider.getDataString(null))));
     }
 }

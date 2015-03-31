@@ -24,11 +24,11 @@ import java.util.List;
 public class AsterixServiceImpl implements Hosting.Iface {
     private final static Logger log = LoggerFactory.getLogger(AsterixServiceImpl.class);
 
-    private AsterixDataProvider dataProvider;
+    private DataProvider dataProvider;
     private volatile HostTask task;
     private volatile String currentData = null;
 
-    public AsterixServiceImpl(AsterixDataProvider dataProvider) {
+    public AsterixServiceImpl(DataProvider dataProvider) {
         this.dataProvider = dataProvider;
     }
 
@@ -95,13 +95,17 @@ public class AsterixServiceImpl implements Hosting.Iface {
         transport.open();
         TProtocol protocol = new TBinaryProtocol(transport);
         Hosting.Client client = new Hosting.Client(protocol);
-        Data data = convert(currentData);
-        log.info("process query on Asterix, result JSON:{}", new TSerializer(new TSimpleJSONProtocol.Factory()).toString(data));
-        log.info("calling getData on client");
-        client.getData(convert(currentData));
-        log.info("calling ntf on client");
-        client.ntf();
-        transport.close();
+        try {
+            Data data = convert(currentData);
+            log.info("process query on Asterix, result JSON:{}", new TSerializer(new TSimpleJSONProtocol.Factory()).toString(data));
+            log.info("calling getData on client");
+            client.getData(data);
+            log.info("calling ntf on client");
+            client.ntf();
+            transport.close();
+        } catch (Exception e) {
+            log.warn("Exception cought during sending data to client: ", e);
+        }
         return 0;
     }
 
@@ -116,7 +120,7 @@ public class AsterixServiceImpl implements Hosting.Iface {
         String asterixQuery = AsterixConverter.convert(query);
         log.info("converted to AQL query: {}", asterixQuery);
         this.task = task;
-        currentData = dataProvider.getDataString();
+        currentData = dataProvider.getDataString(asterixQuery);
         return 0;
     }
 
